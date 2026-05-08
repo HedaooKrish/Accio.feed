@@ -5,6 +5,7 @@ import cors from 'cors'
 import { logger } from './lib/logger'
 import { errorHandler } from './middleware/error.middleware'
 import { healthRouter } from './routes/health.routes'
+import { authRouter } from './routes/auth.routes'
 
 const app = express();
 
@@ -17,7 +18,8 @@ app.use(express.json())
 
 // routes 
 
-app.use('/health' , healthRouter);
+app.use('/health', healthRouter);
+app.use('/auth', authRouter);
 
 // Error handler — must be last
 app.use(errorHandler)
