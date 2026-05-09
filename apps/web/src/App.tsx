@@ -8,14 +8,18 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginPage } from './pages/loginPage'
 import { Signup } from './pages/signupPage'
 import { AuthCallbackPage } from './pages/authCallbackPage'
+import { OnboardingPage } from './pages/OnboardingPage'
+import { SettingsPage } from './pages/SettingsPage'
 
 
 // placeholder pages 
-function OnboardingPage() {
-  return <div style={{ padding: '2rem' }}>Onboarding — coming Day 3</div>
-}
+
 function FeedPage() {
-  return <div style={{ padding: '2rem' }}>Feed — coming Day 4</div>
+  return (
+    <div style={{ padding: '2rem' }}>
+      <h2>Feed — coming Day 4</h2>
+    </div>
+  )
 }
 
 export default function App() {
@@ -53,6 +57,9 @@ export default function App() {
         {/* Protected routes — must be logged in */}
         <Route path="/onboarding" element={
           <ProtectedRoute><OnboardingPage /></ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute><SettingsPage /></ProtectedRoute>
         } />
         <Route path="/feed" element={
           <ProtectedRoute><FeedPage /></ProtectedRoute>
