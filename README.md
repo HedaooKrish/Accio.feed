@@ -1,4 +1,4 @@
-# AccioAI : Your personalized AI Digest
+# Accio.feed : Your personalized AI Digest
 
 A full-stack TypeScript application that automatically scrapes AI news from multiple sources, uses an LLM to summarize and categorize every article, and delivers a personalized daily feed to each user based on their topic preferences.
 
