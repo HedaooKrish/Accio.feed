@@ -10,17 +10,8 @@ import { Signup } from './pages/signupPage'
 import { AuthCallbackPage } from './pages/authCallbackPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { FeedPage } from './pages/FeedPage'
 
-
-// placeholder pages 
-
-function FeedPage() {
-  return (
-    <div style={{ padding: '2rem' }}>
-      <h2>Feed — coming Day 4</h2>
-    </div>
-  )
-}
 
 export default function App() {
 

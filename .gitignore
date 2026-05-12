@@ -1,0 +1,21 @@
+# Environment variables — never commit these
+.env
+.env.local
+.env.production
+.env.staging
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Prisma
+*.db
+
+# OS files
+.DS_Store
+
+# Logs
+*.log
