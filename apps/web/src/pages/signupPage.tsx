@@ -20,27 +20,37 @@ export function SignupPage() {
         setError('')
         setLoading(true)
 
-        const { data, error } = await supabase.auth.signUp({
+        // Step 1 — sign up
+        const { error: signUpError } = await supabase.auth.signUp({ email, password })
+
+        if (signUpError) {
+            setError(signUpError.message)
+            setLoading(false)
+            return
+        }
+
+        // Step 2 — immediately sign in
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
             email,
-            password,
-            options: { emailRedirectTo: `https://holonet-ai.vercel.app/auth/callback` }
+            password
         })
 
         setLoading(false)
 
-        if (error) { setError(error.message); return }
+        if (signInError) {
+            setError(signInError.message)
+            return
+        }
 
-        // Email confirmation disabled — session returned immediately
         if (data.session) {
             setUser(
-                { id: data.user!.id, email: data.user!.email! },
+                { id: data.user.id, email: data.user.email! },
                 data.session.access_token
             )
             navigate('/onboarding')
             return
         }
 
-        // Email confirmation enabled — show check inbox screen
         setDone(true)
     }
 
