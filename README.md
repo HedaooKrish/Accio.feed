@@ -1,21 +1,68 @@
-# Holonet.ai : Your personalized AI Digest
+# Holonet.ai
 
-A full-stack TypeScript application that automatically scrapes AI news from multiple sources, uses an LLM to summarize and categorize every article, and delivers a personalized daily feed to each user based on their topic preferences.
+> The pulse of AI, delivered every morning.
 
----
-
-## What it does
-
-AI moves fast. New models, papers, products, and policy decisions drop daily across dozens of sources. This product scrapes them automatically, summarizes each article using an LLM, and surfaces only what's relevant to you — filtered by topic and technical depth.
-
-- Scrapes HackerNews, ArXiv, and TechCrunch every 12 hours
-- Sends each new article through Groq (Llama 3.3 70B) for summarization and tagging
-- Serves a live filterable feed with personalized topic and depth filters
-- Sends a daily email digest of your top 10 articles
+**Holonet.ai** is a full-stack AI news aggregator that automatically scrapes, summarizes, and personalizes AI news for you — so you never miss what matters.
 
 ---
 
-## Tech stack
+![Landing Page](./screenshots/landing.png)
+
+---
+
+## Features
+
+- **Automated scraping** — HackerNews, ArXiv, and TechCrunch scraped every 12 hours
+- **AI summarization** — Every article summarized by Llama 3.3 70B via Groq
+- **Personalized feed** — Filter by topic and technical depth
+- **Daily email digest** — Top 10 articles in your inbox every morning at 8am
+- **Digest archive** — Every past email viewable in the app
+- **Zero noise** — Only articles matching your exact interests
+
+---
+
+## Screenshots
+
+### Landing Page
+![Landing](./screenshots/landing.png)
+
+### Sign Up
+![Signup](./screenshots/signup.png)
+
+### Onboarding — Topic Setup
+![Onboarding](./screenshots/onboarding.png)
+
+### Live Feed
+![Feed](./screenshots/feed.png)
+
+### Settings
+![Settings](./screenshots/settings.png)
+
+---
+
+## How It Works
+
+```
+Every 12 hours
+──────────────
+HackerNews API  ──┐
+ArXiv XML API   ──┼──► Pipeline ──► Groq LLM ──► Postgres ──► Feed
+TechCrunch HTML ──┘
+
+Every morning at 8am
+─────────────────────
+Postgres ──► Personalization ──► React Email ──► Resend ──► Your inbox
+```
+
+1. **Scrape** — Three scrapers run in parallel, pulling the latest AI news
+2. **Deduplicate** — Articles already in the DB are skipped
+3. **Analyze** — Each new article is sent to Llama 3.3 70B which returns a summary, topic tags, and a technical depth score (1–5)
+4. **Store** — Enriched articles saved to Postgres, immediately live on the feed
+5. **Digest** — Every morning, each user gets a personalized top 10 based on their preferences
+
+---
+
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -23,105 +70,79 @@ AI moves fast. New models, papers, products, and policy decisions drop daily acr
 | Backend | Node.js + Express + TypeScript |
 | Database | Supabase (Postgres) |
 | ORM | Prisma |
-| Auth | Supabase Auth (JWT) |
+| Auth | Supabase Auth |
 | LLM | Groq — Llama 3.3 70B |
 | Email | Resend + React Email |
 | Scheduling | node-cron |
 | Monorepo | pnpm workspaces |
-| Hosting | Railway (API) + Vercel (Frontend) |
-| Secrets | Doppler |
+| Hosting | Render (API) + Vercel (Frontend) |
 
 ---
 
-## Project structure
+## Project Structure
 
 ```
-ai-news-aggregator/
+holonet.ai/
 ├── apps/
-│   ├── api/                        # Express backend
+│   ├── api/                          # Express backend
 │   │   ├── src/
+│   │   │   ├── emails/
+│   │   │   │   └── DigestEmail.tsx   # React Email template
 │   │   │   ├── lib/
-│   │   │   │   ├── db.ts           # Prisma client
-│   │   │   │   ├── logger.ts       # Pino structured logger
-│   │   │   │   ├── supabase.ts     # Supabase admin client
-│   │   │   │   └── scheduler.ts    # node-cron job scheduler
+│   │   │   │   ├── db.ts             # Prisma client
+│   │   │   │   ├── logger.ts         # Pino structured logger
+│   │   │   │   ├── scheduler.ts      # Cron job scheduler
+│   │   │   │   └── supabase.ts       # Supabase admin client
 │   │   │   ├── middleware/
-│   │   │   │   ├── auth.middleware.ts    # JWT verification
-│   │   │   │   └── error.middleware.ts  # Global error handler
+│   │   │   │   ├── auth.middleware.ts
+│   │   │   │   └── error.middleware.ts
 │   │   │   ├── routes/
-│   │   │   │   ├── health.routes.ts
-│   │   │   │   ├── auth.routes.ts
 │   │   │   │   ├── articles.routes.ts
+│   │   │   │   ├── auth.routes.ts
+│   │   │   │   ├── digests.routes.ts
 │   │   │   │   └── preferences.routes.ts
-│   │   │   ├── services/
-│   │   │   │   ├── llm.service.ts       # Groq integration
-│   │   │   │   ├── pipeline.service.ts  # Orchestrates scraping + LLM
-│   │   │   │   └── scrapers/
-│   │   │   │       ├── hackernews.scraper.ts
-│   │   │   │       ├── arxiv.scraper.ts
-│   │   │   │       └── venturebeat.scraper.ts
-│   │   │   └── index.ts
-│   │   ├── prisma/
-│   │   │   └── schema.prisma
-│   │   └── Dockerfile
-│   └── web/                        # React frontend
+│   │   │   └── services/
+│   │   │       ├── digest.service.ts
+│   │   │       ├── llm.service.ts
+│   │   │       ├── pipeline.service.ts
+│   │   │       └── scrapers/
+│   │   │           ├── arxiv.scraper.ts
+│   │   │           ├── hackernews.scraper.ts
+│   │   │           └── venturebeat.scraper.ts
+│   │   └── prisma/
+│   │       └── schema.prisma
+│   └── web/                          # React frontend
 │       └── src/
 │           ├── components/
 │           │   └── ProtectedRoute.tsx
 │           ├── lib/
-│           │   ├── api.ts          # Axios instance with auth interceptor
-│           │   └── supabase.ts     # Supabase client
+│           │   ├── api.ts            # Axios + auth interceptor
+│           │   └── supabase.ts
 │           ├── pages/
-│           │   ├── LoginPage.tsx
-│           │   ├── SignupPage.tsx
-│           │   ├── AuthCallbackPage.tsx
+│           │   ├── LandingPage.tsx
+│           │   ├── loginPage.tsx
+│           │   ├── signupPage.tsx
 │           │   ├── OnboardingPage.tsx
 │           │   ├── FeedPage.tsx
 │           │   └── SettingsPage.tsx
 │           └── store/
-│               └── auth.store.ts   # Zustand auth state
+│               └── auth.store.ts     # Zustand auth state
 └── packages/
-    └── shared/                     # Shared TypeScript types
-        └── src/
-            └── types/
+    └── shared/                       # Shared TypeScript types
 ```
 
 ---
 
-## How the pipeline works
+## Data Model
 
 ```
-Every 12 hours:
-  node-cron triggers pipeline.service.ts
-      │
-      ├── scrapeHackerNews()   — top 50 HN stories, filtered for AI keywords
-      ├── scrapeArxiv()        — 30 latest cs.AI / cs.LG / cs.CL papers
-      └── scrapeTechCrunch()   — 15 latest articles from /category/ai/
-      │
-      ▼
-  Dedup check against DB (skip if URL already exists)
-      │
-      ▼
-  analyzeArticle() — sends to Groq, gets back:
-      │   • summary (2-3 sentences, technically accurate)
-      │   • tags[]  (from fixed taxonomy)
-      │   • technicalDepth (1-5 integer)
-      ▼
-  Article saved to Postgres with processedAt timestamp
-      │
-      ▼
-  Available on the feed immediately
-```
-
----
-
-## Data model
-
-```prisma
 User
-  └── UserPreferences (topics[], minTechnicalDepth, digestFrequency)
-  └── Digest[]
-        └── DigestArticle[] → Article
+ ├── UserPreferences
+ │     topics[]           — e.g. ["llm", "research-paper", "tooling"]
+ │     minTechnicalDepth  — 1 (news) to 5 (ArXiv papers)
+ │     digestFrequency    — daily | weekly
+ └── Digest[]
+       └── DigestArticle[] → Article
 
 Article
   title, url, source, summary, tags[], technicalDepth, publishedAt, processedAt
@@ -129,42 +150,76 @@ Article
 
 ---
 
-## API endpoints
+## Topic Taxonomy
+
+Articles are tagged with one or more of these categories:
+
+| Tag | Description |
+|---|---|
+| `llm` | Large language models |
+| `model-release` | New model announcements |
+| `research-paper` | Academic papers |
+| `open-source` | Open source projects and releases |
+| `computer-vision` | Vision models and applications |
+| `policy` | AI regulation and governance |
+| `startup-funding` | VC rounds and acquisitions |
+| `tooling` | Developer tools and infrastructure |
+| `robotics` | Physical AI and robotics |
+| `multimodal` | Multi-modal models and systems |
+
+**Technical depth** is scored 1–5:
+
+| Score | Meaning |
+|---|---|
+| 1 | General news, announcements |
+| 2 | Some technical context |
+| 3 | Engineering detail, architecture decisions |
+| 4 | Research level content |
+| 5 | ArXiv papers with math |
+
+---
+
+## API Reference
 
 ```
-GET  /health                    — health check (used by uptime monitor)
+GET  /health                  Health check
 
-POST /auth/logout               — invalidate session
-GET  /auth/me                   — current user
+GET  /auth/me                 Current user
+POST /auth/logout             Invalidate session
 
-GET  /preferences               — get user preferences
-PUT  /preferences               — create or update preferences
+GET  /preferences             Get user preferences
+PUT  /preferences             Create or update preferences
 
-GET  /articles                  — paginated feed
-                                  ?tags=llm,tooling
-                                  ?depth=3
-                                  ?page=2
-GET  /articles/:id              — single article
+GET  /articles                Paginated feed
+                              ?tags=llm,tooling
+                              ?depth=3
+                              ?page=2
+GET  /articles/:id            Single article
 
-POST /pipeline/run              — manually trigger scrape (dev only)
+GET  /digests                 Digest archive
+GET  /digests/:id             Single digest
+
+POST /pipeline/run            Manually trigger scrape (dev)
+POST /digest/send             Manually trigger digest send (dev)
 ```
 
 ---
 
-## Getting started
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - pnpm (`npm install -g pnpm`)
-- A Supabase project
-- A Groq API key (free at console.groq.com)
+- Supabase project
+- Groq API key — free at [console.groq.com](https://console.groq.com)
+- Resend API key — free at [resend.com](https://resend.com)
 
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/your-username/ai-news-aggregator.git
-cd ai-news-aggregator
+git clone https://github.com/HedaooKrish/Holonet.ai.git
+cd Holonet.ai
 pnpm install
 ```
 
@@ -172,22 +227,24 @@ pnpm install
 
 ```bash
 # apps/api/.env
-DATABASE_URL="postgresql://..."
-DIRECT_URL="postgresql://..."
-SUPABASE_URL="https://your-project.supabase.co"
-SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
-GROQ_API_KEY="gsk_your-key"
-NODE_ENV="development"
+DATABASE_URL=postgresql://...
+DIRECT_URL=postgresql://...
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+GROQ_API_KEY=gsk_your-key
+RESEND_API_KEY=re_your-key
+FROM_EMAIL=onboarding@resend.dev
+NODE_ENV=development
 PORT=3001
-WEB_URL="http://localhost:5173"
+WEB_URL=http://localhost:5173
 
 # apps/web/.env
-VITE_SUPABASE_URL="https://your-project.supabase.co"
-VITE_SUPABASE_ANON_KEY="your-anon-key"
-VITE_API_URL="http://localhost:3001"
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_API_URL=http://localhost:3001
 ```
 
-### 3. Run migrations
+### 3. Database setup
 
 ```bash
 cd apps/api
@@ -195,17 +252,17 @@ npx prisma migrate dev --name init
 npx prisma generate
 ```
 
-### 4. Start development
+### 4. Run
 
 ```bash
 # from project root
 pnpm dev
 ```
 
-- API runs at `http://localhost:3001`
-- Frontend runs at `http://localhost:5173`
+- Frontend → `http://localhost:5173`
+- API → `http://localhost:3001`
 
-The scraping pipeline runs automatically 3 seconds after the API boots. To trigger it manually:
+The pipeline runs automatically 3 seconds after the API boots. To trigger manually:
 
 ```bash
 curl -X POST http://localhost:3001/pipeline/run
@@ -213,32 +270,15 @@ curl -X POST http://localhost:3001/pipeline/run
 
 ---
 
-## Topic taxonomy
-
-Articles are tagged with one or more of these categories:
-
-`llm` `model-release` `research-paper` `open-source` `computer-vision` `policy` `startup-funding` `tooling` `robotics` `multimodal`
-
-Technical depth is scored 1–5:
-
-| Score | Meaning |
-|---|---|
-| 1 | General news, announcements |
-| 2 | Some technical context |
-| 3 | Engineering detail, architecture |
-| 4 | Research level |
-| 5 | ArXiv paper with math |
-
----
-
 ## Deployment
 
-The API is to be deployed on Railway . The frontend is to be deployed on Vercel. 
+| Service | Platform |
+|---|---|
+| Frontend | Vercel |
+| Backend | Render |
+| Database | Supabase |
 
-```bash
-# Production build
-pnpm build
-```
+Every push to `main` auto-deploys both services.
 
 ---
 
