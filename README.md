@@ -3,7 +3,9 @@
 > The pulse of AI, delivered every morning.
 
 **Holonet.ai** is a full-stack AI news aggregator that automatically scrapes, summarizes, and personalizes AI news for you — so you never miss what matters.
-Link : https://holonet-ai.vercel.app
+
+**[Live Demo →](https://holonet-ai.vercel.app)** &nbsp;·&nbsp; **[API](https://your-render-url.onrender.com/health)**
+
 ---
 
 ![Landing Page](./screenshots/landing.png)
