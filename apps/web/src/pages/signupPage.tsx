@@ -1,8 +1,9 @@
 // apps/web/src/pages/signupPage.tsx
 
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuthStore } from '../store/auth.store'
 
 export function SignupPage() {
     const [email, setEmail] = useState('')
@@ -11,19 +12,35 @@ export function SignupPage() {
     const [done, setDone] = useState(false)
     const [loading, setLoading] = useState(false)
 
+    const navigate = useNavigate()
+    const setUser = useAuthStore(state => state.setUser)
+
     async function handleSignup(e: React.FormEvent) {
         e.preventDefault()
         setError('')
         setLoading(true)
 
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: { emailRedirectTo: `https://holonet-ai.vercel.app/auth/callback` }
         })
 
         setLoading(false)
+
         if (error) { setError(error.message); return }
+
+        // Email confirmation disabled — session returned immediately
+        if (data.session) {
+            setUser(
+                { id: data.user!.id, email: data.user!.email! },
+                data.session.access_token
+            )
+            navigate('/onboarding')
+            return
+        }
+
+        // Email confirmation enabled — show check inbox screen
         setDone(true)
     }
 
@@ -52,7 +69,6 @@ export function SignupPage() {
 
     return (
         <div style={styles.page}>
-
             <div style={styles.left}>
                 <div style={styles.leftInner}>
                     <Link to="/" style={styles.backLink}>← Back</Link>
@@ -78,7 +94,6 @@ export function SignupPage() {
 
             <div style={styles.right}>
                 <div style={styles.formBox}>
-
                     <div style={styles.formHeader}>
                         <h1 style={styles.formTitle}>Create account</h1>
                         <p style={styles.formSubtitle}>Free forever. No credit card.</p>
@@ -114,9 +129,7 @@ export function SignupPage() {
                             />
                         </div>
 
-                        {error && (
-                            <div style={styles.errorBox}>{error}</div>
-                        )}
+                        {error && <div style={styles.errorBox}>{error}</div>}
 
                         <button type="submit" disabled={loading} style={styles.submitBtn}>
                             {loading ? 'Creating account...' : 'Create account'}
@@ -127,7 +140,6 @@ export function SignupPage() {
                         Already have an account?{' '}
                         <Link to="/login" style={styles.switchLink}>Sign in</Link>
                     </p>
-
                 </div>
             </div>
         </div>
