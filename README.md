@@ -205,71 +205,6 @@ POST /digest/send             Manually trigger digest send (dev)
 
 ---
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js 20+
-- pnpm (`npm install -g pnpm`)
-- Supabase project
-- Groq API key — free at [console.groq.com](https://console.groq.com)
-- Resend API key — free at [resend.com](https://resend.com)
-
-### 1. Clone and install
-
-```bash
-git clone https://github.com/HedaooKrish/Holonet.ai.git
-cd Holonet.ai
-pnpm install
-```
-
-### 2. Environment variables
-
-```bash
-# apps/api/.env
-DATABASE_URL=postgresql://...
-DIRECT_URL=postgresql://...
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-GROQ_API_KEY=gsk_your-key
-RESEND_API_KEY=re_your-key
-FROM_EMAIL=onboarding@resend.dev
-NODE_ENV=development
-PORT=3001
-WEB_URL=http://localhost:5173
-
-# apps/web/.env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_API_URL=http://localhost:3001
-```
-
-### 3. Database setup
-
-```bash
-cd apps/api
-npx prisma migrate dev --name init
-npx prisma generate
-```
-
-### 4. Run
-
-```bash
-# from project root
-pnpm dev
-```
-
-- Frontend → `http://localhost:5173`
-- API → `http://localhost:3001`
-
-The pipeline runs automatically 3 seconds after the API boots. To trigger manually:
-
-```bash
-curl -X POST http://localhost:3001/pipeline/run
-```
-
----
-
 ## Deployment
 
 | Service | Platform |
@@ -279,6 +214,8 @@ curl -X POST http://localhost:3001/pipeline/run
 | Database | Supabase |
 
 Every push to `main` auto-deploys both services.
+
+Website Link : https://holonet-ai.vercel.app
 
 ---
 
