@@ -1,10 +1,10 @@
-// apps/api/src/lib/scheduler.ts
+// apps/api/src/lib/scheduler.ts — add digest cron
 
 import cron from 'node-cron'
 import { logger } from './logger'
 import { runScrapingPipeline } from '../services/pipeline.service'
+import { sendDailyDigests } from '../services/digest.service'  // add this
 
-// Track if pipeline is currently running to prevent overlapping runs
 let isRunning = false
 
 async function safePipelineRun() {
@@ -12,28 +12,27 @@ async function safePipelineRun() {
         logger.warn('Pipeline already running — skipping this trigger')
         return
     }
-
     isRunning = true
     try {
         await runScrapingPipeline()
     } finally {
-        isRunning = false // always release the lock, even if pipeline throws
+        isRunning = false
     }
 }
 
 export function startScheduler() {
-    // Run every 6 hours: 0:00, 6:00, 12:00, 18:00
+    // Scraping pipeline — 7am and 7pm
     cron.schedule('0 7,19 * * *', () => {
-        logger.info('Cron: triggering scheduled pipeline run')
+        logger.info('Cron: starting scraping pipeline')
         safePipelineRun()
     })
 
-    logger.info('Scheduler started — pipeline runs every 12 hours')
+    // Daily digest — every morning at 8am
+    // Runs after the 7am scrape so fresh articles are included
+    cron.schedule('0 8 * * *', () => {
+        logger.info('Cron: sending daily digests')
+        sendDailyDigests()
+    })
 
-    // Run once immediately on startup so the feed isn't empty on first load
-    // Small delay to let the server fully start first
-    setTimeout(() => {
-        logger.info('Running initial pipeline on startup...')
-        safePipelineRun()
-    }, 3000)
+    logger.info('Scheduler started')
 }

@@ -108,7 +108,7 @@ export function FeedPage() {
             {/* Sticky navbar */}
             <nav style={styles.nav}>
                 <div style={styles.navInner}>
-                    <span style={styles.logo}>AI Digest</span>
+                    <span style={styles.logo}>Holonet.ai</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <Link to="/settings" style={styles.navLink}>Settings</Link>
                         <button onClick={handleLogout} style={styles.ghostBtn}>

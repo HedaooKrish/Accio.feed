@@ -4,13 +4,16 @@ import { supabase } from './lib/supabase'
 import { useAuthStore } from './store/auth.store'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
+
 // Pages
 import { LoginPage } from './pages/loginPage'
-import { Signup } from './pages/signupPage'
+import { SignupPage } from './pages/signupPage'
 import { AuthCallbackPage } from './pages/authCallbackPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { FeedPage } from './pages/FeedPage'
+import { LandingPage } from './pages/LandingPage'
+
 
 
 export default function App() {
@@ -42,7 +45,7 @@ export default function App() {
       <Routes>
         {/* Public routes — anyone can access */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/signup" element={<SignupPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
         {/* Protected routes — must be logged in */}
@@ -56,8 +59,11 @@ export default function App() {
           <ProtectedRoute><FeedPage /></ProtectedRoute>
         } />
 
+        <Route path="/" element={<LandingPage />} />
+
         {/* Default — redirect to feed, ProtectedRoute handles the rest */}
-        <Route path="*" element={<Navigate to="/feed" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
     </BrowserRouter>
   )

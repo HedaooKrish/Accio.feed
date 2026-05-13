@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ai-news/shared": "workspace:*",
+    "@react-email/components": "^1.0.12",
     "@supabase/supabase-js": "^2.105.3",
     "@tanstack/react-query": "^5.35.0",
     "axios": "^1.7.0",

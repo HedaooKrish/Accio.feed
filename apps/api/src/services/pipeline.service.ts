@@ -7,6 +7,30 @@ import { scrapeHackerNews } from './scrapers/hackernews.scraper'
 import { scrapeArxiv } from './scrapers/arxiv.scraper'
 import { scrapeVentureBeat } from './scrapers/venturebeat.scraper'
 
+async function cleanupOldArticles() {
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+
+    // Delete digest article links first — foreign key constraint
+    await db.digestArticle.deleteMany({
+        where: {
+            article: {
+                publishedAt: { lt: cutoff }
+            }
+        }
+    })
+
+    // Now delete the articles themselves
+    const { count } = await db.article.deleteMany({
+        where: {
+            publishedAt: { lt: cutoff }
+        }
+    })
+
+    if (count > 0) {
+        logger.info(`Cleanup: deleted ${count} articles older than 30 days`)
+    }
+}
+
 export async function runScrapingPipeline(): Promise<void> {
     const startTime = Date.now()
     logger.info('Pipeline: starting')
@@ -121,7 +145,7 @@ export async function runScrapingPipeline(): Promise<void> {
 
     // bottom of runScrapingPipeline, before the final logger.info
     await processUnanalyzedArticles()
-
+    await cleanupOldArticles()  
 
     logger.info(
         `Pipeline complete in ${duration}s: ` +

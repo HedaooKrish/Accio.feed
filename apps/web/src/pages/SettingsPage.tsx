@@ -1,9 +1,9 @@
 // apps/web/src/pages/SettingsPage.tsx
 
 import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuthStore } from '../store/auth.store'
-import { useNavigate } from 'react-router-dom'
 
 const TOPICS = [
     { id: 'llm', label: 'LLMs' },
@@ -18,8 +18,16 @@ const TOPICS = [
     { id: 'multimodal', label: 'Multimodal' },
 ]
 
+const DEPTH_LABELS: Record<number, string> = {
+    1: 'General news',
+    2: 'Some technical context',
+    3: 'Engineering detail',
+    4: 'Research level',
+    5: 'ArXiv papers',
+}
+
 export function SettingsPage() {
-    const [selectedTopics, setSelectedTopics] = useState<string[]>([])
+    const [topics, setTopics] = useState<string[]>([])
     const [depth, setDepth] = useState(2)
     const [frequency, setFrequency] = useState<'daily' | 'weekly'>('daily')
     const [loading, setLoading] = useState(true)
@@ -27,49 +35,37 @@ export function SettingsPage() {
     const [saved, setSaved] = useState(false)
     const [error, setError] = useState('')
 
-    const logout = useAuthStore(state => state.logout)
     const user = useAuthStore(state => state.user)
+    const logout = useAuthStore(state => state.logout)
     const navigate = useNavigate()
 
-    // Load existing preferences when page mounts
     useEffect(() => {
-        api.get('/preferences')
-            .then(res => {
-                if (res.data.data) {
-                    setSelectedTopics(res.data.data.topics)
-                    setDepth(res.data.data.minTechnicalDepth)
-                    setFrequency(res.data.data.digestFrequency)
-                }
-            })
-            .finally(() => setLoading(false))
+        api.get('/preferences').then(res => {
+            if (res.data.data) {
+                setTopics(res.data.data.topics)
+                setDepth(res.data.data.minTechnicalDepth)
+                setFrequency(res.data.data.digestFrequency)
+            }
+        }).finally(() => setLoading(false))
     }, [])
 
     function toggleTopic(id: string) {
-        setSelectedTopics(prev =>
+        setTopics(prev =>
             prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
         )
     }
 
     async function handleSave() {
-        if (selectedTopics.length === 0) {
-            setError('Pick at least one topic')
-            return
-        }
-
-        setSaving(true)
-        setError('')
-
+        if (topics.length === 0) { setError('Pick at least one topic'); return }
+        setSaving(true); setError('')
         try {
             await api.put('/preferences', {
-                topics: selectedTopics,
-                minTechnicalDepth: depth,
-                digestFrequency: frequency
+                topics, minTechnicalDepth: depth, digestFrequency: frequency
             })
             setSaved(true)
-            // Hide the success message after 2 seconds
             setTimeout(() => setSaved(false), 2000)
         } catch {
-            setError('Failed to save. Please try again.')
+            setError('Failed to save. Try again.')
         } finally {
             setSaving(false)
         }
@@ -86,61 +82,55 @@ export function SettingsPage() {
                 minHeight: '100vh', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', background: '#fafafa'
             }}>
-                <p style={{ color: '#999' }}>Loading...</p>
+                <p style={{ color: '#a0a0ab', fontSize: '0.875rem' }}>Loading...</p>
             </div>
         )
     }
 
     return (
-        <div style={{ minHeight: '100vh', background: '#fafafa', padding: '3rem 1rem' }}>
-            <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ minHeight: '100vh', background: '#fafafa' }}>
 
-                {/* Header */}
-                <div style={{
-                    display: 'flex', justifyContent: 'space-between',
-                    alignItems: 'flex-start', marginBottom: '2.5rem'
-                }}>
-                    <div>
-                        <h1 style={{
-                            fontSize: '1.5rem', fontWeight: '600', color: '#111',
-                            marginBottom: '0.25rem'
-                        }}>Settings</h1>
-                        <p style={{ fontSize: '0.875rem', color: '#888' }}>{user?.email}</p>
+            {/* Navbar */}
+            <nav style={styles.nav}>
+                <div style={styles.navInner}>
+                    <Link to="/feed" style={styles.navLogo}>Holonet.ai</Link>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <Link to="/feed" style={styles.navLink}>← Feed</Link>
+                        <button onClick={handleLogout} style={styles.navBtn}>Sign out</button>
                     </div>
-                    <button onClick={handleLogout} style={{
-                        padding: '0.5rem 1rem',
-                        border: '1px solid #e5e5e5',
-                        borderRadius: '8px',
-                        background: '#fff',
-                        fontSize: '0.875rem',
-                        color: '#666',
-                        cursor: 'pointer',
-                    }}>
-                        Sign out
-                    </button>
+                </div>
+            </nav>
+
+            <div style={styles.container}>
+
+                {/* Page header */}
+                <div style={styles.pageHeader}>
+                    <div>
+                        <h1 style={styles.pageTitle}>Settings</h1>
+                        <p style={styles.pageSubtitle}>{user?.email}</p>
+                    </div>
                 </div>
 
-                {/* Topics */}
-                <section style={{ marginBottom: '2rem' }}>
-                    <h2 style={{
-                        fontSize: '0.95rem', fontWeight: '600', color: '#111',
-                        marginBottom: '0.75rem'
-                    }}>Topics</h2>
-                    <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: '0.5rem' }}>
+                {/* Topics section */}
+                <div style={styles.card}>
+                    <div style={styles.cardHeader}>
+                        <h2 style={styles.cardTitle}>Topics</h2>
+                        <p style={styles.cardDesc}>
+                            Your digest only includes articles matching these topics
+                        </p>
+                    </div>
+                    <div style={styles.chipGrid}>
                         {TOPICS.map(topic => {
-                            const isSelected = selectedTopics.includes(topic.id)
+                            const active = topics.includes(topic.id)
                             return (
                                 <button
                                     key={topic.id}
                                     onClick={() => toggleTopic(topic.id)}
                                     style={{
-                                        padding: '0.4rem 0.9rem',
-                                        border: `1px solid ${isSelected ? '#111' : '#e5e5e5'}`,
-                                        borderRadius: '100px',
-                                        background: isSelected ? '#111' : '#fff',
-                                        color: isSelected ? '#fff' : '#444',
-                                        fontSize: '0.85rem',
-                                        cursor: 'pointer',
+                                        ...styles.chip,
+                                        background: active ? '#0a0a0a' : '#ffffff',
+                                        color: active ? '#ffffff' : '#52525b',
+                                        border: `1px solid ${active ? '#0a0a0a' : '#e4e4e7'}`,
                                     }}
                                 >
                                     {topic.label}
@@ -148,94 +138,214 @@ export function SettingsPage() {
                             )
                         })}
                     </div>
-                </section>
+                </div>
 
-                {/* Depth */}
-                <section style={{ marginBottom: '2rem' }}>
-                    <h2 style={{
-                        fontSize: '0.95rem', fontWeight: '600', color: '#111',
-                        marginBottom: '0.75rem'
-                    }}>Minimum technical depth</h2>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' as const }}>
+                {/* Depth section */}
+                <div style={styles.card}>
+                    <div style={styles.cardHeader}>
+                        <h2 style={styles.cardTitle}>Technical depth</h2>
+                        <p style={styles.cardDesc}>
+                            Currently set to: <strong>{DEPTH_LABELS[depth]}</strong>
+                        </p>
+                    </div>
+                    <div style={styles.depthRow}>
                         {[1, 2, 3, 4, 5].map(d => (
                             <button
                                 key={d}
                                 onClick={() => setDepth(d)}
                                 style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    border: `1px solid ${depth === d ? '#111' : '#e5e5e5'}`,
-                                    borderRadius: '8px',
-                                    background: depth === d ? '#111' : '#fff',
-                                    color: depth === d ? '#fff' : '#444',
-                                    fontSize: '0.9rem',
-                                    fontWeight: '500',
-                                    cursor: 'pointer',
+                                    ...styles.depthBtn,
+                                    background: depth === d ? '#0a0a0a' : '#ffffff',
+                                    color: depth === d ? '#ffffff' : '#52525b',
+                                    border: `1px solid ${depth === d ? '#0a0a0a' : '#e4e4e7'}`,
                                 }}
                             >
-                                {d}
+                                <span style={{ fontSize: '1rem', fontWeight: '600' }}>{d}</span>
+                                <span style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: '2px' }}>
+                                    {['News', 'General', 'Eng', 'Research', 'ArXiv'][d - 1]}
+                                </span>
                             </button>
                         ))}
                     </div>
-                </section>
+                </div>
 
-                {/* Frequency */}
-                <section style={{ marginBottom: '2rem' }}>
-                    <h2 style={{
-                        fontSize: '0.95rem', fontWeight: '600', color: '#111',
-                        marginBottom: '0.75rem'
-                    }}>Digest frequency</h2>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {/* Frequency section */}
+                <div style={styles.card}>
+                    <div style={styles.cardHeader}>
+                        <h2 style={styles.cardTitle}>Digest frequency</h2>
+                        <p style={styles.cardDesc}>How often you receive the email</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
                         {(['daily', 'weekly'] as const).map(f => (
                             <button
                                 key={f}
                                 onClick={() => setFrequency(f)}
                                 style={{
-                                    padding: '0.5rem 1.25rem',
-                                    border: `1px solid ${frequency === f ? '#111' : '#e5e5e5'}`,
-                                    borderRadius: '8px',
-                                    background: frequency === f ? '#111' : '#fff',
-                                    color: frequency === f ? '#fff' : '#444',
-                                    fontSize: '0.875rem',
-                                    cursor: 'pointer',
+                                    ...styles.freqBtn,
+                                    background: frequency === f ? '#0a0a0a' : '#ffffff',
+                                    color: frequency === f ? '#ffffff' : '#52525b',
+                                    border: `1px solid ${frequency === f ? '#0a0a0a' : '#e4e4e7'}`,
                                 }}
                             >
                                 {f === 'daily' ? 'Daily' : 'Weekly'}
                             </button>
                         ))}
                     </div>
-                </section>
+                </div>
 
-                {/* Divider */}
-                <div style={{ borderTop: '1px solid #e5e5e5', margin: '2rem 0' }} />
-
-                {error && <p style={{
-                    color: '#c0392b', fontSize: '0.85rem',
-                    marginBottom: '1rem'
-                }}>{error}</p>}
-                {saved && <p style={{
-                    color: '#27ae60', fontSize: '0.85rem',
-                    marginBottom: '1rem'
-                }}>Saved!</p>}
-
-                <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    style={{
-                        padding: '0.75rem 2rem',
-                        background: '#111',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '0.9rem',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                    }}
-                >
-                    {saving ? 'Saving...' : 'Save changes'}
-                </button>
+                {/* Save */}
+                <div style={styles.saveRow}>
+                    {error && <p style={styles.errorText}>{error}</p>}
+                    {saved && <p style={styles.successText}>Changes saved</p>}
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        style={styles.saveBtn}
+                    >
+                        {saving ? 'Saving...' : 'Save changes'}
+                    </button>
+                </div>
 
             </div>
         </div>
     )
+}
+
+const styles = {
+    nav: {
+        background: '#ffffff',
+        borderBottom: '1px solid #e4e4e7',
+        position: 'sticky' as const,
+        top: 0,
+        zIndex: 10,
+    },
+    navInner: {
+        maxWidth: '680px',
+        margin: '0 auto',
+        padding: '0 1.5rem',
+        height: '56px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    navLogo: {
+        fontSize: '0.925rem',
+        fontWeight: '600',
+        color: '#0a0a0a',
+        letterSpacing: '-0.01em',
+    },
+    navLink: {
+        fontSize: '0.825rem',
+        color: '#71717a',
+    },
+    navBtn: {
+        fontSize: '0.825rem',
+        color: '#71717a',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: 0,
+    },
+    container: {
+        maxWidth: '680px',
+        margin: '0 auto',
+        padding: '2.5rem 1.5rem 4rem',
+    },
+    pageHeader: {
+        marginBottom: '2rem',
+    },
+    pageTitle: {
+        fontSize: '1.5rem',
+        fontWeight: '600',
+        color: '#0a0a0a',
+        letterSpacing: '-0.02em',
+        marginBottom: '0.2rem',
+    },
+    pageSubtitle: {
+        fontSize: '0.85rem',
+        color: '#a0a0ab',
+    },
+    card: {
+        background: '#ffffff',
+        border: '1px solid #e4e4e7',
+        borderRadius: '12px',
+        padding: '1.5rem',
+        marginBottom: '1rem',
+    },
+    cardHeader: {
+        marginBottom: '1.25rem',
+    },
+    cardTitle: {
+        fontSize: '0.925rem',
+        fontWeight: '600',
+        color: '#0a0a0a',
+        marginBottom: '0.2rem',
+        letterSpacing: '-0.01em',
+    },
+    cardDesc: {
+        fontSize: '0.825rem',
+        color: '#71717a',
+    },
+    chipGrid: {
+        display: 'flex',
+        flexWrap: 'wrap' as const,
+        gap: '0.5rem',
+    },
+    chip: {
+        padding: '0.4rem 0.9rem',
+        borderRadius: '100px',
+        fontSize: '0.825rem',
+        fontWeight: '500',
+        cursor: 'pointer',
+        transition: 'all 0.1s',
+    },
+    depthRow: {
+        display: 'flex',
+        gap: '0.5rem',
+    },
+    depthBtn: {
+        flex: 1,
+        padding: '0.75rem 0.5rem',
+        borderRadius: '10px',
+        cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        alignItems: 'center',
+        gap: '2px',
+        transition: 'all 0.1s',
+    },
+    freqBtn: {
+        padding: '0.6rem 1.5rem',
+        borderRadius: '8px',
+        fontSize: '0.875rem',
+        fontWeight: '500',
+        cursor: 'pointer',
+        transition: 'all 0.1s',
+    },
+    saveRow: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: '1rem',
+        marginTop: '0.5rem',
+    },
+    errorText: {
+        fontSize: '0.825rem',
+        color: '#dc2626',
+    },
+    successText: {
+        fontSize: '0.825rem',
+        color: '#16a34a',
+    },
+    saveBtn: {
+        padding: '0.65rem 1.5rem',
+        background: '#0a0a0a',
+        color: '#ffffff',
+        border: 'none',
+        borderRadius: '8px',
+        fontSize: '0.875rem',
+        fontWeight: '500',
+        cursor: 'pointer',
+        letterSpacing: '-0.01em',
+    },
 }
