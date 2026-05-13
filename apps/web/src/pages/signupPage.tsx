@@ -19,7 +19,7 @@ export function SignupPage() {
         const { error } = await supabase.auth.signUp({
             email,
             password,
-            options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
+            options: { emailRedirectTo: `https://holonet-ai.vercel.app/auth/callback` }
         })
 
         setLoading(false)
