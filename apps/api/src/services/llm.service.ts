@@ -61,6 +61,7 @@ Return exactly this structure:
             .replace(/^```json\s*/i, '')
             .replace(/^```\s*/i, '')
             .replace(/\s*```$/i, '')
+            .replace(/[\x00-\x1F\x7F]/g, '') // remove control characters
             .trim()
 
         const parsed = JSON.parse(cleaned) as ArticleAnalysis

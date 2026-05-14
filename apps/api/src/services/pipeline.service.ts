@@ -80,7 +80,7 @@ export async function runScrapingPipeline(): Promise<void> {
 
             // Send to Gemini for analysis
             // Small delay between LLM calls to avoid rate limiting
-            await new Promise(r => setTimeout(r, 500))
+            await new Promise(r => setTimeout(r, 2000))
             const analysis = await analyzeArticle(article.title, article.content)
 
             if (analysis) {
@@ -145,7 +145,7 @@ export async function runScrapingPipeline(): Promise<void> {
 
     // bottom of runScrapingPipeline, before the final logger.info
     await processUnanalyzedArticles()
-    await cleanupOldArticles()  
+    await cleanupOldArticles()
 
     logger.info(
         `Pipeline complete in ${duration}s: ` +
