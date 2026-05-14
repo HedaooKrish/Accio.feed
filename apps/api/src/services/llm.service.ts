@@ -3,10 +3,7 @@
 import Groq from 'groq-sdk'
 import { logger } from '../lib/logger'
 
-// Groq runs Llama 3 at very high speed — free tier is generous
-const client = new Groq({
-    apiKey: process.env.GROQ_API_KEY!
-})
+const client = new Groq({ apiKey: process.env.GROQ_API_KEY! })
 
 export interface ArticleAnalysis {
     summary: string
@@ -25,46 +22,40 @@ export async function analyzeArticle(
     content: string
 ): Promise<ArticleAnalysis | null> {
     try {
-        const truncated = content.slice(0, 3000)
+        const truncated = content.slice(0, 2000)
 
         const response = await client.chat.completions.create({
-            model: 'llama-3.3-70b-versatile', // best free model on Groq
+            model: 'llama-3.3-70b-versatile',
             messages: [
                 {
                     role: 'system',
-                    content: 'You are an AI news analyst. Always respond with valid JSON only. No markdown, no backticks, no explanation whatsoever.'
+                    content: 'You are an AI news analyst. Return only valid JSON with no special characters or escape sequences in string values.'
                 },
                 {
                     role: 'user',
-                    content: `
-Analyze this article and return ONLY a JSON object.
+                    content: `Analyze this article:
 
 Title: ${title}
 Content: ${truncated}
 
-Return exactly this structure:
+Return this JSON structure:
 {
-  "summary": "2-3 sentences. Preserve technical accuracy. Do not simplify terms.",
-  "tags": ["1-3 tags chosen ONLY from: llm, model-release, research-paper, open-source, computer-vision, policy, startup-funding, tooling, robotics, multimodal"],
-  "technicalDepth": <integer 1-5: 1=general news, 2=some tech, 3=engineering detail, 4=research, 5=arxiv paper>
+  "summary": "2-3 sentence plain English summary with no special characters",
+  "tags": ["1-3 tags from: llm, model-release, research-paper, open-source, computer-vision, policy, startup-funding, tooling, robotics, multimodal"],
+  "technicalDepth": 1
 }
-`
+
+technicalDepth must be integer 1-5.`
                 }
             ],
             temperature: 0.1,
+            response_format: { type: 'json_object' } // forces valid JSON — no escape issues
         })
 
         const text = response.choices[0]?.message?.content?.trim()
         if (!text) throw new Error('Empty response from Groq')
 
-        const cleaned = text
-            .replace(/^```json\s*/i, '')
-            .replace(/^```\s*/i, '')
-            .replace(/\s*```$/i, '')
-            .replace(/[\x00-\x1F\x7F]/g, '') // remove control characters
-            .trim()
-
-        const parsed = JSON.parse(cleaned) as ArticleAnalysis
+        const parsed = JSON.parse(text) as ArticleAnalysis
 
         return {
             summary: typeof parsed.summary === 'string'
